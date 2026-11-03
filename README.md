@@ -64,10 +64,18 @@ python3 validar_contenido.py --sesion 7 -v
 ---
 
 ## 🏗️ Proyecto Integrador Semestral (30%)
-* **Hito 1 (Sesión 10):** Mini-Evaluador y Frontend Semántico (AST + Tipos).
-* **Hito 2 (Sesión 20):** Tabla de Símbolos Jerárquica y Gestión de Scopes.
-* **Hito 3 (Sesión 30):** Generador de Código de Tres Direcciones (TAC) Optimizado.
-* **Hito 4 (Sesión 40):** Backend, Generación de Ensamblador y Binario ELF Final.
+
+**Lenguajito:** un compilador para un lenguaje mínimo de variables enteras, `if/else`, `while` y `print`. Equipos de 3 a 4 personas, un repositorio por equipo y cuatro hitos.
+
+* **Hito 1 (Sesión 10):** léxico, sintaxis y AST de expresiones.
+* **Hito 2 (Sesión 20):** sentencias, tabla de símbolos y ámbitos.
+* **Hito 3 (Sesión 30):** TAC y optimizaciones.
+* **Hito 4 (Sesión 40):** backend x86-64 y binario ELF.
+
+Guía de trabajo, entregas y evaluación: **[guía del proyecto](proyecto_integrador/docs/guia-proyecto.md)**.
+Reglas, rúbrica, calendario y definición de terminado: **[PROYECTO.md](PROYECTO.md)**.
+El lenguaje y la interfaz de línea de comandos: **[gramática de Lenguajito](proyecto_integrador/docs/gramatica.md)**.
+El arranque (Makefile, CLI y pruebas doradas): **[proyecto_integrador/](proyecto_integrador/)**.
 
 ---
 
