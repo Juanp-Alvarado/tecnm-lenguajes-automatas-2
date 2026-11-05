@@ -13,6 +13,7 @@
 #include <string.h>
 #include "compilador.h"
 #include "lexer.h"
+#include "parser.h"
 
 /**
  * @brief Lee un archivo fuente completo y lo carga en un búfer de memoria dinámico.
@@ -120,7 +121,18 @@ int compilar(const char *ruta, const char *modo) {
         free(codigo);
         return 0;
     }
+if (strcmp(modo, "--ast") == 0) {
+    AstNodo *raiz = parser_analizar(codigo, ruta, stdout);
+    free(codigo);
 
+    if (raiz == NULL) {
+        return 1;
+    }
+
+    ast_imprimir(stdout, raiz);
+    ast_liberar(raiz);
+    return 0;
+}
     // 3. Modos pendientes para siguientes etapas del proyecto
     free(codigo);
     fprintf(stderr, "%s: el modo '%s' aún no está implementado en este hito\n", ruta, modo);
