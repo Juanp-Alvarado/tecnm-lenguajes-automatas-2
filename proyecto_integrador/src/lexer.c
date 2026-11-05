@@ -1,128 +1,142 @@
-/**
- * @file compilador.c
- * @brief Módulo principal de control y enrutamiento del compilador de Lenguajito.
- * @curso Lenguajes y Autómatas II (SCD-1016)
- * 
- * Este archivo se encarga de recibir la ruta del archivo fuente y el modo 
- * de ejecución solicitado (--tokens, --ast, --check, etc.), gestionando la 
- * lectura de memoria y la invocación de las etapas correspondientes del compilador.
- */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include "compilador.h"
 #include "lexer.h"
 
-/**
- * @brief Lee un archivo fuente completo y lo carga en un búfer de memoria dinámico.
- * @param ruta Ruta del archivo fuente en formato .lj
- * @return Puntero al contenido del archivo terminado en '\0', o NULL si falla.
- */
-static char *leer_archivo(const char *ruta) {
-    // Abrir el archivo en modo lectura de texto
-    FILE *f = fopen(ruta, "r");
-    if (!f) return NULL;
-    
-    // Calcular el tamaño total del archivo moviendo el puntero al final
-    fseek(f, 0, SEEK_END);
-    long tam = ftell(f);
-    fseek(f, 0, SEEK_SET); // Regresar al inicio
-    
-    // Reservar memoria para el contenido más el carácter nulo '\0'
-    char *buffer = malloc(tam + 1);
-    if (!buffer) {
-        fclose(f);
-        return NULL;
-    }
-    
-    // Leer el archivo completo hacia el búfer
-    long leidos = fread(buffer, 1, tam, f);
-    buffer[leidos] = '\0';
-    
-    fclose(f);
-    return buffer;
+#include <string.h>
+
+static int es_letra(char c)
+{
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-/**
- * @brief Convierte un tipo de token enumerado a su representación textual en string.
- * @param type Tipo de token (TokenType) definido en el lexer.
- * @return Cadena de caracteres con la etiqueta exacta que exige la especificación.
- */
-static const char* token_a_string(TokenType type) {
-    switch (type) {
-        case TOKEN_INT:     return "KEYWORD int";
-        case TOKEN_IF:      return "KEYWORD if";
-        case TOKEN_ELSE:    return "KEYWORD else";
-        case TOKEN_WHILE:   return "KEYWORD while";
-        case TOKEN_PRINT:   return "KEYWORD print";
-        case TOKEN_ID:      return "IDENT";
-        case TOKEN_NUM:     return "NUM";
-        case TOKEN_ASSIGN:  return "ASSIGN";
-        case TOKEN_PLUS:    return "PLUS";
-        case TOKEN_MINUS:   return "MINUS";
-        case TOKEN_MUL:     return "MUL";
-        case TOKEN_DIV:     return "DIV";
-        case TOKEN_EQ:      return "EQ";
-        case TOKEN_NEQ:     return "NEQ";
-        case TOKEN_LT:      return "LT";
-        case TOKEN_GT:      return "GT";
-        case TOKEN_LTE:     return "LTE";
-        case TOKEN_GTE:     return "GTE";
-        case TOKEN_LPAREN:  return "LPAREN";
-        case TOKEN_RPAREN:  return "RPAREN";
-        case TOKEN_LBRACE:  return "LBRACE";
-        case TOKEN_RBRACE:  return "RBRACE";
-        case TOKEN_SEMICOLON: return "SEMICOLON";
-        default:            return "UNKNOWN";
-    }
+static int es_digito(char c)
+{
+    return c >= '0' && c <= '9';
 }
 
-/**
- * @brief Función principal de compilación que enruta la ejecución según el modo.
- * @param ruta Ruta del archivo fuente a compilar.
- * @param modo Bandera de operación (--tokens, --ast, --check, etc.).
- * @return 0 si todo sale bien, 1 si ocurren errores de compilación o de lectura.
- */
-int compilar(const char *ruta, const char *modo) {
-    // 1. Cargar el código fuente en memoria
-    char *codigo = leer_archivo(ruta);
-    if (!codigo) {
-        fprintf(stderr, "error: no se pudo abrir o leer el archivo fuente: %s\n", ruta);
-        return 1;
+static char avanzar(Lexer *lexer)
+{
+    char c = lexer->source[lexer->pos++];
+
+    if (c == '\n') {
+        lexer->line++;
+        lexer->col = 1;
+    } else {
+        lexer->col++;
     }
 
-    // 2. Manejo del modo --tokens (Hito 1)
-    if (strcmp(modo, "--tokens") == 0) {
-        Lexer l;
-        lexer_init(&l, codigo);
-        Token t;
-        
-        // Bucle para extraer tokens secuencialmente hasta el final del archivo
-        do {
-            t = lexer_next_token(&l);
-            
-            // Si alcanzamos el fin de archivo, terminamos el recorrido
-            if (t.type == TOKEN_EOF) break;
-            
-            // Si el lexer encuentra un carácter no reconocido, reporta error léxico
-            if (t.type == TOKEN_ERROR) {
-                fprintf(stderr, "%d:%d error léxico: carácter inesperado '%s'\n", t.line, t.col, t.lexeme);
-                free(codigo);
-                return 1;
-            }
-            
-            // Imprime en el formato estricto requerido: linea:columna TIPO lexema
-            printf("%d:%d %s %s\n", t.line, t.col, token_a_string(t.type), t.lexeme);
-            
-        } while (t.type != TOKEN_EOF);
+    return c;
+}
 
-        free(codigo);
+static int consumir(Lexer *lexer, char esperado)
+{
+    if (lexer->source[lexer->pos] != esperado) {
         return 0;
     }
 
-    // 3. Modos pendientes para siguientes etapas del proyecto
-    free(codigo);
-    fprintf(stderr, "%s: el modo '%s' aún no está implementado en este hito\n", ruta, modo);
+    avanzar(lexer);
     return 1;
+}
+
+static void saltar_espacios_y_comentarios(Lexer *lexer)
+{
+    for (;;) {
+        char c = lexer->source[lexer->pos];
+
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n') {
+            avanzar(lexer);
+        } else if (c == '/' && lexer->source[lexer->pos + 1] == '/') {
+            while (lexer->source[lexer->pos] != '\0' &&
+                   lexer->source[lexer->pos] != '\n') {
+                avanzar(lexer);
+            }
+        } else {
+            return;
+        }
+    }
+}
+
+static TokenType tipo_de_identificador(const char *lexema)
+{
+    if (strcmp(lexema, "int") == 0) return TOKEN_INT;
+    if (strcmp(lexema, "if") == 0) return TOKEN_IF;
+    if (strcmp(lexema, "else") == 0) return TOKEN_ELSE;
+    if (strcmp(lexema, "while") == 0) return TOKEN_WHILE;
+    if (strcmp(lexema, "print") == 0) return TOKEN_PRINT;
+
+    return TOKEN_ID;
+}
+
+static TokenType tipo_de_simbolo(Lexer *lexer, char c)
+{
+    switch (c) {
+    case '+': return TOKEN_PLUS;
+    case '-': return TOKEN_MINUS;
+    case '*': return TOKEN_MUL;
+    case '/': return TOKEN_DIV;
+    case '(': return TOKEN_LPAREN;
+    case ')': return TOKEN_RPAREN;
+    case '{': return TOKEN_LBRACE;
+    case '}': return TOKEN_RBRACE;
+    case ';': return TOKEN_SEMICOLON;
+    case '=': return consumir(lexer, '=') ? TOKEN_EQ : TOKEN_ASSIGN;
+    case '!': return consumir(lexer, '=') ? TOKEN_NEQ : TOKEN_ERROR;
+    case '<': return consumir(lexer, '=') ? TOKEN_LTE : TOKEN_LT;
+    case '>': return consumir(lexer, '=') ? TOKEN_GTE : TOKEN_GT;
+    default:  return TOKEN_ERROR;
+    }
+}
+
+void lexer_init(Lexer *lexer, const char *source)
+{
+    lexer->source = source;
+    lexer->pos = 0;
+    lexer->line = 1;
+    lexer->col = 1;
+}
+
+Token lexer_next_token(Lexer *lexer)
+{
+    saltar_espacios_y_comentarios(lexer);
+
+    size_t inicio = lexer->pos;
+    Token token = {
+        .type = TOKEN_EOF,
+        .line = lexer->line,
+        .col = lexer->col
+    };
+
+    if (lexer->source[inicio] == '\0') {
+        return token;
+    }
+
+    char c = avanzar(lexer);
+
+    if (es_letra(c)) {
+        while (es_letra(lexer->source[lexer->pos]) ||
+               es_digito(lexer->source[lexer->pos])) {
+            avanzar(lexer);
+        }
+        token.type = TOKEN_ID;
+    } else if (es_digito(c)) {
+        while (es_digito(lexer->source[lexer->pos])) {
+            avanzar(lexer);
+        }
+        token.type = TOKEN_NUM;
+    } else {
+        token.type = tipo_de_simbolo(lexer, c);
+    }
+
+    size_t longitud = lexer->pos - inicio;
+    if (longitud >= sizeof token.lexeme) {
+        token.type = TOKEN_ERROR;
+        longitud = sizeof token.lexeme - 1;
+    }
+
+    memcpy(token.lexeme, lexer->source + inicio, longitud);
+    token.lexeme[longitud] = '\0';
+
+    if (token.type == TOKEN_ID) {
+        token.type = tipo_de_identificador(token.lexeme);
+    }
+
+    return token;
 }
