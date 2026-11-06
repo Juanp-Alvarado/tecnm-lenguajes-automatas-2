@@ -133,6 +133,18 @@ if (strcmp(modo, "--ast") == 0) {
     ast_liberar(raiz);
     return 0;
 }
+
+if (strcmp(modo, "--check") == 0) {
+    AstNodo *raiz = parser_analizar(codigo, ruta, stdout);
+    free(codigo);
+
+    if (raiz == NULL) {
+        return 1;
+    }
+
+    ast_liberar(raiz);
+    return 0;
+}
     // 3. Modos pendientes para siguientes etapas del proyecto
     free(codigo);
     fprintf(stderr, "%s: el modo '%s' aún no está implementado en este hito\n", ruta, modo);
