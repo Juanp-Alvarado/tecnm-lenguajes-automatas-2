@@ -1,12 +1,16 @@
 # Entrega · Hito N
 
-**Equipo:** [integrantes]  
+**Equipo:** [Juan Pablo Alvarado 
+Diego Reyes Martinez
+Lesli Tamara Canul Llanes
+Pablo Uriel Desiderio Lopez 
+Ricardo Hernandez Naranjo]  
 **Repositorio:** [URL del fork]  
 **Tag:** `v0.N-hitoN`  
-**Fecha:** [AAAA-MM-DD]
+**Fecha:** [05/11/2026]
 
 ---
-
+ 67
 ## 1. Qué funciona
 
 Comandos exactos que se pueden ejecutar y qué producen:
