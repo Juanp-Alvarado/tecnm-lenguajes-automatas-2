@@ -1,0 +1,1 @@
+(programa (declarar r (- (- (num 10) (num 3)) (num 2))))
