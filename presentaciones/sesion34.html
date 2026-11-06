@@ -135,6 +135,14 @@
     .terminal { align-self: start; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; }
     .terminal-bar { background: #161b22; color: #8b949e; font-family: var(--font-mono); font-size: 0.68rem; padding: 6px 12px; border-bottom: 1px solid #30363d; }
     .terminal pre { margin: 0; padding: 12px 14px; color: #7ee787; font-family: var(--font-mono); font-size: 0.62rem; line-height: 1.45; white-space: pre; overflow-x: auto; }
+    .code-box { align-self: start; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; }
+    .code-head { background: #161b22; color: #8b949e; font-family: var(--font-mono); font-size: 0.66rem; padding: 6px 12px; border-bottom: 1px solid #30363d; }
+    pre.code { margin: 0; padding: 10px 12px; color: #e6edf3; font-family: var(--font-mono); font-size: 0.58rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+    pre.code .kw { color: #79c0ff; }
+    pre.code .num { color: #d2a8ff; }
+    pre.code .str { color: #ffa657; }
+    pre.code .com { color: #7ee787; font-style: italic; }
+    .code-note { margin: 0; padding: 8px 12px; border-top: 1px solid #30363d; color: #8b949e; font-size: 0.7rem; line-height: 1.35; }
     footer {
       padding: 12px 28px;
       background: rgba(255, 255, 255, 0.85);
@@ -298,7 +306,41 @@
       </div>
     </section>
 
-    <!-- Lámina 7: lo que vas a construir hoy -->
+    <!-- Lámina 7: el código del laboratorio y del proyecto -->
+    <section class="slide">
+      <h2>Así se ve el código</h2>
+      <p class="lead">A la izquierda, el contrato y el esqueleto que vas a completar. A la derecha, dónde aparece ese concepto en Lenguajito.</p>
+      <div class="grid-2">
+        <div class="code-box">
+          <div class="code-head">en el laboratorio · sesión 34</div>
+          <pre class="code"><span class="com">/* api_sesion34.h */</span>
+<span class="kw">int</span> marco_alineado(<span class="kw">int</span> locales, <span class="kw">int</span> callee_saved);
+<span class="com">/* + 1 firma(s) más en la cabecera */</span>
+
+<span class="com">/* tu archivo, por ahora */</span>
+<span class="kw">int</span> marco_alineado(<span class="kw">int</span> locales, <span class="kw">int</span> callee_saved) {
+    (<span class="kw">void</span>)locales;
+    (<span class="kw">void</span>)callee_saved; <span class="com">/* TODO: redondear segun la alineacion de la ABI */</span>
+    <span class="kw">return</span> <span class="num">0</span>;
+}</pre>
+        </div>
+        <div class="code-box">
+          <div class="code-head">en el proyecto · Lenguajito</div>
+          <pre class="code">pushq %rbp
+movq %rsp, %rbp
+subq $<span class="num">16</span>, %rsp
+<span class="com">/* ... */</span>
+leave
+ret</pre>
+          <p class="code-note">En el proyecto: prólogo y epílogo de main.</p>
+        </div>
+      </div>
+      <div class="interactive-box">
+        <strong>No es la solución:</strong> la firma es el contrato y el cuerpo está marcado con <code>TODO</code>. El código de la derecha es del proyecto, no del laboratorio: si copias cualquiera de los dos tal cual, el <em>harness</em> sigue en rojo.
+      </div>
+    </section>
+
+    <!-- Lámina 8: lo que vas a construir hoy -->
     <section class="slide">
       <h2>Lo que vas a construir hoy</h2>
       <p class="lead">Recibes cuántos bytes de variables locales y cuántos registros callee-saved hay que preservar; devuelves la N exacta de subq $N, %rsp. También devuelves la secuencia de salida de la función.</p>
@@ -331,7 +373,7 @@ TODO EN VERDE. Documenta tu auditoria en auditorias/auditoria_sesion34.md</pre>
       </div>
     </section>
 
-    <!-- Lámina 8: dinámica y entrega -->
+    <!-- Lámina 9: dinámica y entrega -->
     <section class="slide">
       <h2>Dinámica de la clase y protocolo de entrega</h2>
       <div class="grid-2">
@@ -361,7 +403,7 @@ TODO EN VERDE. Documenta tu auditoria en auditorias/auditoria_sesion34.md</pre>
   </main>
 
   <footer>
-    <div class="progress" id="slideIndicator">SLIDE 1 / 8</div>
+    <div class="progress" id="slideIndicator">SLIDE 1 / 9</div>
     <div class="controls">
       <button id="prevBtn" onclick="prevSlide()" disabled>&larr; Anterior</button>
       <button id="nextBtn" onclick="nextSlide()">Siguiente &rarr;</button>

@@ -16,7 +16,7 @@ Repositorio oficial del curso de **Lenguajes y Autómatas II** del Tecnológico 
 
 ## 🧭 Cómo está armada cada sesión
 
-Cada presentación sigue el mismo recorrido de 8 láminas, para que siempre sepas dónde estás y a dónde vamos:
+Cada presentación sigue el mismo recorrido de 9 láminas, para que siempre sepas dónde estás y a dónde vamos:
 
 1. **Portada** — tema, pregunta guía y objetivo de la sesión.
 2. **Conceptos básicos** — las ideas en lenguaje llano y con analogías, antes de los tecnicismos.
@@ -24,8 +24,9 @@ Cada presentación sigue el mismo recorrido de 8 láminas, para que siempre sepa
 4. **Fundamentos teóricos**.
 5. **Arquitectura de memoria**.
 6. **Casos borde y antipatrones**.
-7. **Lo que vas a construir hoy** — entregable, reglas, criterios y la salida literal del *harness*.
-8. **Dinámica y entrega**.
+7. **Así se ve el código** — la firma y la llamada del laboratorio, y su equivalente en Lenguajito.
+8. **Lo que vas a construir hoy** — entregable, reglas, criterios y la salida literal del *harness*.
+9. **Dinámica y entrega**.
 
 Cada laboratorio declara, antes de pedir una sola línea de código:
 

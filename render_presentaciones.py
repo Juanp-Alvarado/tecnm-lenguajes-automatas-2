@@ -39,6 +39,96 @@ def _tarjeta(titulo: str, cuerpo: str, detalle: str, color: str) -> str:
         </div>"""
 
 
+def _resaltar(codigo: str) -> str:
+    """Resaltado mínimo: comentarios, cadenas, palabras clave y números."""
+    texto = html.escape(codigo, quote=False)
+    guardados: list[str] = []
+
+    def guardar(m):
+        guardados.append(m.group(0))
+        return f"@@{chr(65 + len(guardados) - 1)}@@"
+
+    texto = re.sub(r"/\*.*?\*/|//[^\n]*|#[^\n]*", guardar, texto, flags=re.S)
+    texto = re.sub(r'"(?:\\.|[^"\\])*"', guardar, texto)
+    texto = re.sub(
+        r"\b(int|char|void|long|unsigned|const|struct|typedef|enum|static|"
+        r"return|if|else|while|for|switch|case|break|default|size_t)\b",
+        r'<span class="kw">\1</span>',
+        texto,
+    )
+    texto = re.sub(r"\b(\d+)\b", r'<span class="num">\1</span>', texto)
+
+    def restaurar(m):
+        token = guardados[ord(m.group(1)) - 65]
+        clase = "com" if token.startswith(("/*", "//", "#")) else "str"
+        return f'<span class="{clase}">{token}</span>'
+
+    return re.sub(r"@@([A-Z])@@", restaurar, texto)
+
+
+def _bloques_stub(stub: str) -> list[str]:
+    """Separa el esqueleto en bloques de función (de la firma a la llave final)."""
+    lineas = stub.splitlines()
+    bloques: list[str] = []
+    i = 0
+    while i < len(lineas):
+        if re.match(r"^[A-Za-z_].*\(.*\)\s*\{?\s*$", lineas[i]) and not lineas[i].startswith("#"):
+            j = i
+            while j < len(lineas) and lineas[j].strip() != "}":
+                j += 1
+            if j < len(lineas):
+                bloques.append("\n".join(lineas[i:j + 1]))
+                i = j + 1
+                continue
+        i += 1
+    return bloques
+
+
+def _lab_codigo(lab: dict) -> str:
+    """Contrato del laboratorio + el esqueleto de la función que deben escribir."""
+    lineas = [f"/* {lab['api']['header']} */"]
+    lineas += list(lab["api"].get("tipos", []))
+    decls = lab["api"]["decls"]
+    lineas.append(decls[0])
+    if len(decls) > 1:
+        lineas.append(f"/* + {len(decls) - 1} firma(s) más en la cabecera */")
+    lineas.append("")
+    lineas.append("/* tu archivo, por ahora */")
+
+    nombres = []
+    for decl in lab["api"]["decls"]:
+        m = re.search(r"(\w+)\s*\(", decl)
+        if m:
+            nombres.append(m.group(1))
+
+    bloques = _bloques_stub(lab["stub"])
+    elegido = None
+    for bloque in bloques:
+        if "TODO" in bloque and any(re.search(rf"\b{nom}\s*\(", bloque) for nom in nombres):
+            elegido = bloque
+            break
+    if elegido is None:
+        for bloque in bloques:
+            if "TODO" in bloque:
+                elegido = bloque
+                break
+    if elegido is None:
+        elegido = bloques[0] if bloques else lab["api"]["decls"][0]
+
+    # Si el bloque usa un tipo definido en el propio esqueleto, muéstralo.
+    for typedef in lab["stub"].splitlines():
+        if typedef.startswith("typedef") and typedef.rstrip().endswith(";"):
+            m = re.search(r"}\s*(\w+);", typedef)
+            if m and re.search(rf"\b{m.group(1)}\b", elegido):
+                lineas.append(typedef)
+
+    stub_lineas = elegido.splitlines()
+    if len(stub_lineas) > 6:
+        stub_lineas = stub_lineas[:6] + ["/* ... */"]
+    lineas += stub_lineas
+    return "\n".join(lineas)
+
+
 def render(num: int, data: dict, unidades: list[dict], total: int = 40,
            siguiente_tema: str | None = None) -> str:
     n = f"{num:02d}"
@@ -90,7 +180,12 @@ def render(num: int, data: dict, unidades: list[dict], total: int = 40,
     )
     items_s4 = "".join(f"<li>{fmt(item)}</li>" for item in cb["items"])
 
-    # --- Lámina 7: laboratorio -------------------------------------------
+    # --- Lámina 7: código del laboratorio y del proyecto ------------------
+    lab_code = _resaltar(_lab_codigo(lab))
+    proy_code = _resaltar(data["codigo_proyecto"])
+    proy_nota = fmt(data["codigo_nota"])
+
+    # --- Lámina 8: laboratorio -------------------------------------------
     criterios = "".join(f"<li>{fmt(c)}</li>" for c in lab["criterios"])
     salida = html.escape(expected_output(num, lab).rstrip("\n"), quote=False)
     reglas = "".join(f"<li>{fmt(r)}</li>" for r in lab.get("reglas", []))
@@ -232,6 +327,14 @@ def render(num: int, data: dict, unidades: list[dict], total: int = 40,
     .terminal {{ align-self: start; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; }}
     .terminal-bar {{ background: #161b22; color: #8b949e; font-family: var(--font-mono); font-size: 0.68rem; padding: 6px 12px; border-bottom: 1px solid #30363d; }}
     .terminal pre {{ margin: 0; padding: 12px 14px; color: #7ee787; font-family: var(--font-mono); font-size: 0.62rem; line-height: 1.45; white-space: pre; overflow-x: auto; }}
+    .code-box {{ align-self: start; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; overflow: hidden; }}
+    .code-head {{ background: #161b22; color: #8b949e; font-family: var(--font-mono); font-size: 0.66rem; padding: 6px 12px; border-bottom: 1px solid #30363d; }}
+    pre.code {{ margin: 0; padding: 10px 12px; color: #e6edf3; font-family: var(--font-mono); font-size: 0.58rem; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }}
+    pre.code .kw {{ color: #79c0ff; }}
+    pre.code .num {{ color: #d2a8ff; }}
+    pre.code .str {{ color: #ffa657; }}
+    pre.code .com {{ color: #7ee787; font-style: italic; }}
+    .code-note {{ margin: 0; padding: 8px 12px; border-top: 1px solid #30363d; color: #8b949e; font-size: 0.7rem; line-height: 1.35; }}
     footer {{
       padding: 12px 28px;
       background: rgba(255, 255, 255, 0.85);
@@ -330,7 +433,27 @@ def render(num: int, data: dict, unidades: list[dict], total: int = 40,
       </div>
     </section>
 
-    <!-- Lámina 7: lo que vas a construir hoy -->
+    <!-- Lámina 7: el código del laboratorio y del proyecto -->
+    <section class="slide">
+      <h2>Así se ve el código</h2>
+      <p class="lead">A la izquierda, el contrato y el esqueleto que vas a completar. A la derecha, dónde aparece ese concepto en Lenguajito.</p>
+      <div class="grid-2">
+        <div class="code-box">
+          <div class="code-head">en el laboratorio · sesión {n}</div>
+          <pre class="code">{lab_code}</pre>
+        </div>
+        <div class="code-box">
+          <div class="code-head">en el proyecto · Lenguajito</div>
+          <pre class="code">{proy_code}</pre>
+          <p class="code-note">{proy_nota}</p>
+        </div>
+      </div>
+      <div class="interactive-box">
+        <strong>No es la solución:</strong> la firma es el contrato y el cuerpo está marcado con <code>TODO</code>. El código de la derecha es del proyecto, no del laboratorio: si copias cualquiera de los dos tal cual, el <em>harness</em> sigue en rojo.
+      </div>
+    </section>
+
+    <!-- Lámina 8: lo que vas a construir hoy -->
     <section class="slide">
       <h2>Lo que vas a construir hoy</h2>
       <p class="lead">{fmt(lab["explicacion"])}</p>
@@ -353,7 +476,7 @@ def render(num: int, data: dict, unidades: list[dict], total: int = 40,
       </div>
     </section>
 
-    <!-- Lámina 8: dinámica y entrega -->
+    <!-- Lámina 9: dinámica y entrega -->
     <section class="slide">
       <h2>Dinámica de la clase y protocolo de entrega</h2>
       <div class="grid-2">
@@ -383,7 +506,7 @@ def render(num: int, data: dict, unidades: list[dict], total: int = 40,
   </main>
 
   <footer>
-    <div class="progress" id="slideIndicator">SLIDE 1 / 8</div>
+    <div class="progress" id="slideIndicator">SLIDE 1 / 9</div>
     <div class="controls">
       <button id="prevBtn" onclick="prevSlide()" disabled>&larr; Anterior</button>
       <button id="nextBtn" onclick="nextSlide()">Siguiente &rarr;</button>

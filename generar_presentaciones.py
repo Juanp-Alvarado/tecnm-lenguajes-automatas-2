@@ -87,7 +87,7 @@ def main() -> None:
         ruta = f"presentaciones/sesion{n:02d}.html"
         with open(ruta, "w", encoding="utf-8") as f:
             f.write(html)
-        print(f"  -> {ruta} ({len(html.splitlines())} líneas, 8 láminas)")
+        print(f"  -> {ruta} ({len(html.splitlines())} líneas, 9 láminas)")
 
     print(f"✅ {len(numeros)} presentación(es) generada(s).")
 
