@@ -86,7 +86,14 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'str'}],
              'criterios': ['El buffer original queda invertido: no hay copia ni malloc.',
                            'Los seis casos del harness salen OK con código de salida 0.',
-                           'invertir(NULL) y la cadena vacía no provocan fallo de segmentación.']}},
+                           'invertir(NULL) y la cadena vacía no provocan fallo de segmentación.']},
+     'codigo_proyecto': '/* el lexer recorre el fuente con un puntero */\n'
+                        'char *p = fuente;\n'
+                        "while (*p != '\\0') {\n"
+                        '    /* reconocer el token que empieza en p */\n'
+                        '    p++;\n'
+                        '}',
+     'codigo_nota': 'En el proyecto: el lexer avanza sobre el buffer del programa.'},
  2: {'tema': 'Gestión en GitHub Web y Nodos Dinámicos en Heap',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'Estructuras Dinámicas para Tokens y Símbolos',
@@ -193,7 +200,12 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'str'}],
              'criterios': ['Cada token ocupa un nodo reservado con malloc y encadenado con siguiente.',
                            'agregar_token devuelve la lista completa aunque la cabeza cambie.',
-                           'contar_tokens(NULL) devuelve 0 y liberar_lista(NULL) no se cae.']}},
+                           'contar_tokens(NULL) devuelve 0 y liberar_lista(NULL) no se cae.']},
+     'codigo_proyecto': 'NodoToken *tokens = NULL;\n'
+                        'tokens = agregar_token(tokens, "int");\n'
+                        'tokens = agregar_token(tokens, "x");\n'
+                        'tokens = agregar_token(tokens, ";");',
+     'codigo_nota': 'En el proyecto: la lista de tokens que produce el lexer.'},
  3: {'tema': 'Google Colab, Mágicos y Flujo de Entrega',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'Automatización de Compiladores en Entornos Linux',
@@ -296,7 +308,13 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'int'}],
              'criterios': ['Los archivos se cierran en todos los caminos y un error se reporta con -1.',
                            'contar_lineas distingue un archivo vacío, uno con salto final y uno sin él.',
-                           'escribir_texto falla con -1 si la ruta no se puede abrir.']}},
+                           'escribir_texto falla con -1 si la ruta no se puede abrir.']},
+     'codigo_proyecto': 'FILE *f = fopen("programa.lj", "r");\n'
+                        'if (f == NULL) {\n'
+                        '    fprintf(stderr, "no se pudo abrir\\n");\n'
+                        '    return 1;\n'
+                        '}',
+     'codigo_nota': 'En el proyecto: abrir el fuente antes de tokenizar.'},
  4: {'tema': 'Anatomía de un Árbol Sintáctico Abstracto (AST)',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'De Árbol de Derivación Concreta (CST) a AST',
@@ -411,7 +429,11 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'int'}],
              'criterios': ['crear_binario respeta el orden izquierdo/derecho de los hijos.',
                            'evaluar aplica el operador después de evaluar ambos hijos.',
-                           'evaluar(NULL) devuelve -1 sin provocar fallo de segmentación.']}},
+                           'evaluar(NULL) devuelve -1 sin provocar fallo de segmentación.']},
+     'codigo_proyecto': "ASTNode *n = crear_binario('+',\n"
+                        '                crear_numero(1),\n'
+                        "                crear_binario('*', crear_numero(2), crear_numero(3)));",
+     'codigo_nota': 'En el proyecto: el parser construye este árbol para 1 + 2 * 3.'},
  5: {'tema': 'Recorridos del AST y Notación Polaca Inversa',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'Patrones de Recorrido y Orden Topológico',
@@ -522,7 +544,9 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'str'}],
              'criterios': ['El recorrido respeta el orden izquierdo, derecho, raíz.',
                            'Los tokens quedan separados por un solo espacio y sin espacio final.',
-                           "Un árbol nulo produce cadena vacía y el buffer siempre termina en '\\0'."]}},
+                           "Un árbol nulo produce cadena vacía y el buffer siempre termina en '\\0'."]},
+     'codigo_proyecto': 'char buf[64];\npostorden(raiz, buf, sizeof buf);\n/* "1 2 3 * +" */',
+     'codigo_nota': 'En el proyecto: recorrer el AST para emitir TAC.'},
  6: {'tema': 'Sistema de Tipos Primitivos y Verificación Semántica',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'El Rol del Analizador Semántico',
@@ -611,7 +635,12 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                        {'caso': 'nombre_tipo(ERROR)', 'codigo': '', 'var': 'nombre_tipo(TIPO_ERROR)', 'esperado': 'error', 'tipo': 'str'}],
              'criterios': ['La compatibilidad solo acepta destinos de igual o mayor rango.',
                            'TIPO_ERROR se rechaza siempre y se nombra como error.',
-                           'Los seis casos del harness salen OK con código de salida 0.']}},
+                           'Los seis casos del harness salen OK con código de salida 0.']},
+     'codigo_proyecto': 'Tipo t = tipo_de(nodo);     /* TIPO_INT */\n'
+                        'if (t != TIPO_INT) {\n'
+                        '    reportar_error(nodo, "tipo incompatible");\n'
+                        '}',
+     'codigo_nota': 'En el proyecto: Lenguajito solo tiene int; lo demás se rechaza.'},
  7: {'tema': 'Evaluación de Expresiones Aritméticas y Casos Límite',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'Intérprete AST y Evaluación Constante',
@@ -734,7 +763,9 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'int'}],
              'criterios': ['La división y el módulo comprueban el divisor antes de operar.',
                            'evaluar(NULL,&e) devuelve error=2 sin caerse.',
-                           'Un error en un hijo impide evaluar el padre.']}},
+                           'Un error en un hijo impide evaluar el padre.']},
+     'codigo_proyecto': 'int error = 0;\nint valor = evaluar(raiz, &error);\n/* 1 + 2 * 3  ->  7 */',
+     'codigo_nota': 'En el proyecto: plegado de constantes en el AST.'},
  8: {'tema': 'Inferencia y Promoción de Tipos',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'Coerción Implícita y Ensanchamiento de Tipos',
@@ -844,7 +875,9 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'int'}],
              'criterios': ['promover devuelve siempre el tipo de mayor rango y nunca pierde el centinela ERROR.',
                            'hay_perdida solo es cierto cuando el destino es más angosto.',
-                           'Los seis casos del harness salen OK con código de salida 0.']}},
+                           'Los seis casos del harness salen OK con código de salida 0.']},
+     'codigo_proyecto': 'Tipo a = TIPO_INT, b = TIPO_INT;\nTipo r = promover(a, b);    /* TIPO_INT */',
+     'codigo_nota': 'En el proyecto: sin float, la promoción siempre da int.'},
  9: {'tema': 'Reporte Formal de Errores Semánticos y Diagnóstico',
      'unidad': 'Unidad 1: Análisis Semántico y AST',
      'teoria_principal': {'titulo': 'Ingeniería de Diagnósticos y Resiliencia del Parser',
@@ -928,7 +961,9 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                         'tipo': 'str'}],
              'criterios': ['El formato coincide carácter por carácter con el estilo de GCC.',
                            'El buffer nunca se desborda y siempre queda terminado.',
-                           'Los cuatro casos del harness salen OK con código de salida 0.']}},
+                           'Los cuatro casos del harness salen OK con código de salida 0.']},
+     'codigo_proyecto': "programa.lj:2:5: error E02: redeclaración de 'x' en el mismo ámbito",
+     'codigo_nota': 'En el proyecto: el formato exacto que revisa make test.'},
  10: {'tema': 'Hito 1: Mini-Evaluador de Expresiones y AST Completo',
       'unidad': 'Unidad 1: Análisis Semántico y AST',
       'teoria_principal': {'titulo': 'Integración del Frontend Semántico del Compilador',
@@ -1059,4 +1094,6 @@ TEORIA_BLOQUE_1 = {1: {'tema': 'Encuadre, Diagnóstico de Punteros y Metodologí
                          'tipo': 'int'}],
               'criterios': ['El analizador respeta precedencia: la multiplicación se resuelve antes que la suma.',
                             'Los paréntesis y los espacios no alteran el resultado.',
-                            'La división entre cero y la sintaxis inválida se reportan con códigos distintos.']}}}
+                            'La división entre cero y la sintaxis inválida se reportan con códigos distintos.']},
+      'codigo_proyecto': 'int error = 0;\nlong v = evaluar_expresion("1 + 2 * 3", &error);\n/* v == 7, error == 0 */',
+      'codigo_nota': 'En el proyecto: el mismo parser de expresiones del Hito 1.'}}

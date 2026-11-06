@@ -82,6 +82,10 @@ def _esquema(num: int, data: dict) -> None:
         if len(definicion) < 20 or len(analogia) < 20:
             raise ErrorValidacion(f"definición o analogía demasiado corta: {c!r}")
 
+    for clave in ("codigo_proyecto", "codigo_nota"):
+        if not isinstance(data.get(clave), str) or len(data[clave]) < 10:
+            raise ErrorValidacion(f"falta data['{clave}'] (código del proyecto)")
+
     for clave in ("reto", "entregable", "explicacion", "stub"):
         if not isinstance(lab.get(clave), str) or len(lab[clave]) < 10:
             raise ErrorValidacion(f"lab['{clave}'] ausente o demasiado corto")
