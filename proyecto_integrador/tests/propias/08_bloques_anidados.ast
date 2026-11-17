@@ -1,0 +1,1 @@
+(programa (declarar x (num 1)) (si (< (var x) (num 2)) (entonces (bloque (bloque (imprimir (var x)))))))
