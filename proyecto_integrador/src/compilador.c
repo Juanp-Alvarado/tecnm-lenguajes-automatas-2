@@ -14,6 +14,7 @@
 #include "parser.h"
 #include "semantica.h"
 #include "interprete.h"
+#include "tac.h"
 
 /* Lee todo el archivo fuente a un buffer terminado en '\0' (NULL si falla). */
 static char *leer_archivo(const char *ruta) {
@@ -155,6 +156,25 @@ int compilar(const char *ruta, const char *modo) {
         ast_liberar(raiz);
         return 0;
 }
+
+    /* --tac (Hito 3): codigo de tres direcciones, ya optimizado */
+    if (strcmp(modo, "--tac") == 0) {
+        AstNodo *raiz = parser_analizar(codigo, ruta, stdout);
+        free(codigo);
+
+        if (raiz == NULL) {
+            return 1;
+        }
+
+        if (semantica_revisar(raiz, ruta, stdout) > 0) {
+            ast_liberar(raiz);
+            return 1;
+        }
+
+        tac_generar(raiz, stdout);
+        ast_liberar(raiz);
+        return 0;
+    }
 
     /* modos pendientes para los siguientes hitos */
     free(codigo);
