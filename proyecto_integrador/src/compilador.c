@@ -13,6 +13,7 @@
 #include "lexer.h"
 #include "parser.h"
 #include "semantica.h"
+#include "interprete.h"
 
 /* Lee todo el archivo fuente a un buffer terminado en '\0' (NULL si falla). */
 static char *leer_archivo(const char *ruta) {
@@ -135,6 +136,25 @@ int compilar(const char *ruta, const char *modo) {
         ast_liberar(raiz);
         return errores > 0 ? 1 : 0;
     }
+
+        /* --run (Hito 2): interpreta el AST. Desde el Hito 4 debe ejecutar el binario. */
+    if (strcmp(modo, "--run") == 0) {
+        AstNodo *raiz = parser_analizar(codigo, ruta, stdout);
+        free(codigo);
+
+        if (raiz == NULL) {
+            return 1;
+        }
+
+        if (semantica_revisar(raiz, ruta, stdout) > 0) {
+            ast_liberar(raiz);
+            return 1;
+        }
+
+        interprete_ejecutar(raiz, stdout);
+        ast_liberar(raiz);
+        return 0;
+}
 
     /* modos pendientes para los siguientes hitos */
     free(codigo);

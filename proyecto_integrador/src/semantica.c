@@ -1,6 +1,7 @@
 #include "semantica.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 #define MAX_VARIABLES 500
 #define MAX_AMBITOS   100
@@ -93,6 +94,15 @@ static void revisar_expresion(Contexto *c, const AstNodo *nodo)
         return;
     }
 
+    /* E04: division entre una constante 0, detectada en compilacion */
+    if (nodo->tipo == AST_BINARIA && nodo->token.type == TOKEN_DIV) {
+        const AstNodo *der = nodo->hijo != NULL ? nodo->hijo->siguiente : NULL;
+        if (der != NULL && der->tipo == AST_NUMERO &&
+            strtol(der->token.lexeme, NULL, 10) == 0) {
+            reportar(c, &nodo->token, "E04", "división entre cero constante", "");
+        }
+    }
+
     if (nodo->tipo == AST_VARIABLE) {
         int i = buscar(c, nodo->token.lexeme);
         if (i < 0) {
@@ -100,8 +110,7 @@ static void revisar_expresion(Contexto *c, const AstNodo *nodo)
         } else if (!c->variables[i].tiene_valor) {
             reportar(c, &nodo->token, "E01", "variable sin valor asignado", "");
         }
-        return;
-    }
+        return;    }
 
     for (const AstNodo *h = nodo->hijo; h != NULL; h = h->siguiente) {
         revisar_expresion(c, h);
