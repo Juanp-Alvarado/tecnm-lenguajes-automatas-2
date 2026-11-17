@@ -3,22 +3,57 @@
 #include <string.h>
 
 #define MAX_VARIABLES 500
-#define MAX_ERRORES 20
+#define MAX_AMBITOS   100
+#define MAX_ERRORES   20
 
 typedef struct {
     char nombre[256];
     int tiene_valor;
 } Variable;
 
+/*
+ * Pila de ambitos.
+ * Todas las variables visibles van en un solo arreglo (la "tabla").
+ * Cada ambito recuerda en que posicion de la tabla empezo (marcas[]).
+ * Al cerrar un ambito basta con regresar `cantidad` a esa marca, y las
+ * variables de ese bloque dejan de existir.
+ */
 typedef struct {
     Variable variables[MAX_VARIABLES];
-    int cantidad;
+    int cantidad;               /* cuantas variables hay en la tabla */
+
+    int marcas[MAX_AMBITOS];    /* marcas[i] = inicio del ambito i en la tabla */
+    int profundidad;            /* 0 = ambito global */
+    int exceso;                 /* bloques anidados de mas (si pasan de MAX_AMBITOS) */
+
     unsigned errores;
     const char *ruta;
     FILE *diagnosticos;
 } Contexto;
 
-/* busca desde la ultima declarada hacia atras; -1 si no existe */
+/* entra a un ambito nuevo (se llama al abrir un bloque) */
+static void push_scope(Contexto *c)
+{
+    if (c->profundidad + 1 >= MAX_AMBITOS) {
+        c->exceso++;            /* demasiado anidado: no abre ambito nuevo */
+        return;
+    }
+    c->profundidad++;
+    c->marcas[c->profundidad] = c->cantidad;
+}
+
+/* sale del ambito actual y destruye sus variables (se llama al cerrar un bloque) */
+static void pop_scope(Contexto *c)
+{
+    if (c->exceso > 0) {
+        c->exceso--;
+        return;
+    }
+    c->cantidad = c->marcas[c->profundidad];
+    c->profundidad--;
+}
+
+/* busca en TODOS los ambitos visibles, de adentro hacia afuera; -1 si no existe */
 static int buscar(const Contexto *c, const char *nombre)
 {
     for (int i = c->cantidad - 1; i >= 0; i--) {
@@ -29,11 +64,24 @@ static int buscar(const Contexto *c, const char *nombre)
     return -1;
 }
 
-static void reportar(Contexto *c, const Token *t, const char *texto)
+/* busca SOLO en el ambito actual (para detectar E02); -1 si no esta */
+static int buscar_en_ambito_actual(const Contexto *c, const char *nombre)
+{
+    for (int i = c->cantidad - 1; i >= c->marcas[c->profundidad]; i--) {
+        if (strcmp(c->variables[i].nombre, nombre) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+/* imprime:  archivo:linea:columna: error CODIGO: prefijo 'nombre'sufijo */
+static void reportar(Contexto *c, const Token *t, const char *codigo,
+                     const char *prefijo, const char *sufijo)
 {
     if (c->errores < MAX_ERRORES) {
-        fprintf(c->diagnosticos, "%s:%d:%d: error E01: %s '%s'\n",
-                c->ruta, t->line, t->col, texto, t->lexeme);
+        fprintf(c->diagnosticos, "%s:%d:%d: error %s: %s '%s'%s\n",
+                c->ruta, t->line, t->col, codigo, prefijo, t->lexeme, sufijo);
     }
     c->errores++;
 }
@@ -48,9 +96,9 @@ static void revisar_expresion(Contexto *c, const AstNodo *nodo)
     if (nodo->tipo == AST_VARIABLE) {
         int i = buscar(c, nodo->token.lexeme);
         if (i < 0) {
-            reportar(c, &nodo->token, "variable no declarada");
+            reportar(c, &nodo->token, "E01", "variable no declarada", "");
         } else if (!c->variables[i].tiene_valor) {
-            reportar(c, &nodo->token, "variable sin valor asignado");
+            reportar(c, &nodo->token, "E01", "variable sin valor asignado", "");
         }
         return;
     }
@@ -64,9 +112,14 @@ static void revisar_sentencia(Contexto *c, const AstNodo *nodo)
 {
     switch (nodo->tipo) {
     case AST_DECLARACION:
-        /* primero la expresion inicial, despues se declara la variable */
+        /* primero la expresion inicial (puede leer una variable de afuera) */
         revisar_expresion(c, nodo->hijo);
-        if (c->cantidad < MAX_VARIABLES) {
+
+        if (buscar_en_ambito_actual(c, nodo->token.lexeme) >= 0) {
+            /* ya existe en este mismo ambito: E02 y no se vuelve a agregar */
+            reportar(c, &nodo->token, "E02", "redeclaración de",
+                     " en el mismo ámbito");
+        } else if (c->cantidad < MAX_VARIABLES) {
             Variable *v = &c->variables[c->cantidad++];
             strcpy(v->nombre, nodo->token.lexeme);
             v->tiene_valor = (nodo->hijo != NULL);
@@ -77,7 +130,7 @@ static void revisar_sentencia(Contexto *c, const AstNodo *nodo)
         revisar_expresion(c, nodo->hijo);
         int i = buscar(c, nodo->token.lexeme);
         if (i < 0) {
-            reportar(c, &nodo->token, "variable no declarada");
+            reportar(c, &nodo->token, "E01", "variable no declarada", "");
         } else {
             c->variables[i].tiene_valor = 1;
         }
@@ -97,8 +150,17 @@ static void revisar_sentencia(Contexto *c, const AstNodo *nodo)
         revisar_expresion(c, nodo->hijo);
         break;
 
-    case AST_PROGRAMA:
     case AST_BLOQUE:
+        /* cada bloque { } abre un ambito nuevo y lo cierra al terminar */
+        push_scope(c);
+        for (const AstNodo *h = nodo->hijo; h != NULL; h = h->siguiente) {
+            revisar_sentencia(c, h);
+        }
+        pop_scope(c);
+        break;
+
+    case AST_PROGRAMA:
+        /* el programa es el ambito global (profundidad 0), no abre otro */
         for (const AstNodo *h = nodo->hijo; h != NULL; h = h->siguiente) {
             revisar_sentencia(c, h);
         }
